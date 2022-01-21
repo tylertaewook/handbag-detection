@@ -11,7 +11,7 @@
             "program": "${file}",
             "args": [
                 "-t",
-                "./logos/g3.jpg",
+                "./logos/g1.png",
                 "-i",
                 "./images",
                 "-s",

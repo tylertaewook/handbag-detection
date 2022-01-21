@@ -18,7 +18,7 @@ ap.add_argument(
     "-s",
     "--threshold",
     required=True,
-    help="Threshold TM_COEFF_NORMED score for determining PXG or ETC",
+    help="Threshold TM_COEFF_NORMED score for determining GC or ETC",
 )
 ap.add_argument(
     "-v",
@@ -112,9 +112,9 @@ def write_json(res_pxg, res_etc):
 
 if __name__ == "__main__":
     start_time = time.process_time()
-    res_pxg = multiscale_matchtemp("pxg")
-    res_etc = multiscale_matchtemp("etc")
-    write_json(res_pxg, res_etc)
+    res_gc = multiscale_matchtemp("gc")
+    res_etc = multiscale_matchtemp("pxg")
+    write_json(res_gc, res_etc)
     end_time = time.process_time()
     elapsed_time = end_time - start_time
 
