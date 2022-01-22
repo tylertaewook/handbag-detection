@@ -11,13 +11,13 @@
             "program": "${file}",
             "args": [
                 "-t",
-                "./logos/g1.png",
+                "./logos/g2.png",
                 "-i",
-                "./images",
+                "./dataset",
                 "-s",
-                "0.23",
+                "0.20",
                 "-v",
-                "True"
+                "False"
             ],
             "console": "integratedTerminal"
         }

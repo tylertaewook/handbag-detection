@@ -5,6 +5,7 @@ import glob
 import cv2
 import time
 import json
+from tqdm import tqdm
 
 ap = argparse.ArgumentParser()
 ap.add_argument("-t", "--template", required=True, help="Path to template image")
@@ -28,7 +29,7 @@ ap.add_argument(
 args = vars(ap.parse_args())
 
 
-def multiscale_matchtemp(dirname):
+def multiscale_matchtemp(dirname=None):
     template = cv2.imread(args["template"])
     template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
     template = cv2.Canny(template, 50, 200)
@@ -36,7 +37,13 @@ def multiscale_matchtemp(dirname):
     cv2.imshow("Template", template)
     resultdict = {}
 
-    for imagePath in glob.glob(args["images"] + "/" + dirname + "/*.jpg"):
+    imagesets = (
+        glob.glob(args["images"] + "/" + dirname + "/*.jpg")
+        if dirname
+        else glob.glob(args["images"] + "/*.png")
+    )
+
+    for imagePath in tqdm(imagesets):
         image = cv2.imread(imagePath)
         imagename = imagePath.rsplit("/", 1)[-1]
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -56,23 +63,24 @@ def multiscale_matchtemp(dirname):
             result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF_NORMED)
             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
 
-            if args.get("visualize", False):
-                clone = np.dstack([edged, edged, edged])
-                cv2.rectangle(
-                    clone,
-                    (maxLoc[0], maxLoc[1]),
-                    (maxLoc[0] + tW, maxLoc[1] + tH),
-                    (0, 0, 255),
-                    2,
-                )
-                cv2.imshow("Visualize", clone)
-                cv2.waitKey(0)
+            # if args.get("--visualize", True):
+            #     clone = np.dstack([edged, edged, edged])
+            #     cv2.rectangle(
+            #         clone,
+            #         (maxLoc[0], maxLoc[1]),
+            #         (maxLoc[0] + tW, maxLoc[1] + tH),
+            #         (0, 0, 255),
+            #         2,
+            #     )
+            #     cv2.imshow("Visualize", clone)
+            #     cv2.waitKey(0)
             if found is None or maxVal > found[0]:
                 found = (maxVal, maxLoc, r)
             # maxv above threshold found
             if maxVal > float(args["threshold"]):
                 break
-        (maxVal, maxLoc, r) = found
+        if found is not None:
+            (maxVal, maxLoc, r) = found
         # print(imagename, "maxVal: ", maxVal)
         resultdict[imagename] = maxVal
         # unpack the bookkeeping variable and compute the (x, y) coordinates
@@ -89,7 +97,6 @@ def multiscale_matchtemp(dirname):
 def write_json(res_pxg, res_etc):
     final = {}
     merged = {**res_pxg, **res_etc}  # ! syntax error when not on debugger
-    merged = {}
     detected = {}
     na = {}
     for key, value in merged.items():
@@ -110,11 +117,33 @@ def write_json(res_pxg, res_etc):
         json.dump(final, file, ensure_ascii=False, indent=4)
 
 
+def write_json_ds(res):
+    final = {}
+    detected = {}
+    na = {}
+    for key, value in res.items():
+        if value > float(args["threshold"]):
+            detected[key] = value
+        else:
+            na[key] = value
+    final["DETECTED"] = detected
+    final["NA"] = na
+    # final["pxg_MAXV"] = res_pxg
+    # final["etc_MAXV"] = res_etc
+    final["MEAN"] = sum(res.values()) / len(res)
+    final["MEAN"] = sum(res.values()) / len(res)
+
+    with open("res_multiscale_ds.json", "w") as file:
+        json.dump(final, file, ensure_ascii=False, indent=4)
+
+
 if __name__ == "__main__":
     start_time = time.process_time()
-    res_gc = multiscale_matchtemp("gc")
-    res_etc = multiscale_matchtemp("pxg")
-    write_json(res_gc, res_etc)
+    # res_gc = multiscale_matchtemp("gc")
+    # res_etc = multiscale_matchtemp("pxg")
+    # write_json(res_gc, res_etc)
+    res = multiscale_matchtemp()
+    write_json_ds(res)
     end_time = time.process_time()
     elapsed_time = end_time - start_time
 
