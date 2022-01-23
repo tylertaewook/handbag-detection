@@ -34,7 +34,7 @@ def multiscale_matchtemp(dirname=None):
     template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
     template = cv2.Canny(template, 50, 200)
     (tH, tW) = template.shape[:2]
-    cv2.imshow("Template", template)
+    # cv2.imshow("Template", template)
     resultdict = {}
 
     imagesets = (
@@ -124,8 +124,8 @@ def write_json_ds(res):
     for key, value in res.items():
         if value > float(args["threshold"]):
             detected[key] = value
-        else:
-            na[key] = value
+        # else:
+        #     na[key] = value
     final["DETECTED"] = detected
     final["NA"] = na
     # final["pxg_MAXV"] = res_pxg
