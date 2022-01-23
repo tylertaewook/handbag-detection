@@ -46,7 +46,7 @@ def multiscale_matchtemp(dirname=None):
     for imagePath in tqdm(imagesets):
         image = cv2.imread(imagePath)
         imagename = imagePath.rsplit("/", 1)[-1]
-        if image is None:
+        if image is None:  # * prevents !_src.empty() error
             continue
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         found = None
