@@ -51,13 +51,13 @@ def foreachLogo(imagePath, logos):
         (tH, tW) = template.shape[:2]
 
         image = cv2.imread(imagePath)
+        if image is None:
+            return 0
         # Adding randn noise
         noise = np.zeros(image.shape, np.int32)
         cv2.randn(noise, 50, 10)
         image = cv2.add(image, noise, dtype=cv2.CV_8UC3)
 
-        if image is None:  # * prevents !_src.empty() error
-            continue
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         found = None
 
