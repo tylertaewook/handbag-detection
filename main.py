@@ -1,81 +1,14 @@
-import pandas as pd
-import re
-import cv2
 import numpy as np
-import pytesseract
-from pytesseract import Output
+import cv2
+from matplotlib import pyplot as plt
 
-# df = pd.read_csv("gucciset.csv")
-# print("debug")
+img1 = cv2.imread("./images/gc/bracelet.jpg", 0)
+img2 = cv2.imread("./logos/gucc2.png", 0)
+# img1 = template = cv2.Canny(img1, 50, 200)
+# img2 = template = cv2.Canny(img2, 50, 200)
 
-img = cv2.imread("belt.jpg")
-
-# get grayscale image
-def get_grayscale(image):
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-
-# noise removal
-def remove_noise(image):
-    return cv2.medianBlur(image, 5)
-
-
-# thresholding
-def thresholding(image):
-    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-
-# dilation
-def dilate(image):
-    kernel = np.ones((5, 5), np.uint8)
-    return cv2.dilate(image, kernel, iterations=1)
-
-
-# erosion
-def erode(image):
-    kernel = np.ones((5, 5), np.uint8)
-    return cv2.erode(image, kernel, iterations=1)
-
-
-# opening - erosion followed by dilation
-def opening(image):
-    kernel = np.ones((5, 5), np.uint8)
-    return cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
-
-
-# canny edge detection
-def canny(image):
-    return cv2.Canny(image, 100, 200)
-
-
-# skew correction
-def deskew(image):
-    coords = np.column_stack(np.where(image > 0))
-    angle = cv2.minAreaRect(coords)[-1]
-    if angle < -45:
-        angle = -(90 + angle)
-    else:
-        angle = -angle
-    (h, w) = image.shape[:2]
-    center = (w // 2, h // 2)
-    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-    rotated = cv2.warpAffine(
-        image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE
-    )
-    return rotated
-
-
-d = pytesseract.image_to_data(img, output_type=Output.DICT)
-keys = list(d.keys())
-
-text = "GUCCI"
-
-n_boxes = len(d["text"])
-for i in range(n_boxes):
-    if int(float(d["conf"][i])) > 60:
-        if text == d["text"][i]:
-            (x, y, w, h) = (d["left"][i], d["top"][i], d["width"][i], d["height"][i])
-            img = cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-cv2.imshow("img", img)
-cv2.waitKey(0)
+template = cv2.imread("./logos/g3.png")
+template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+template = cv2.Canny(template, 50, 200)
+cv2.imshow("", template)
+cv2.waitKey()
