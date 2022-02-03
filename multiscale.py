@@ -8,7 +8,7 @@ import json
 from tqdm import tqdm
 
 ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--template", required=True, help="Path to template image")
+ap.add_argument("-t", "--templates", required=True, help="Path to template image")
 ap.add_argument(
     "-i",
     "--images",
@@ -21,11 +21,6 @@ ap.add_argument(
     required=True,
     help="Threshold TM_COEFF_NORMED score for determining GC or ETC",
 )
-ap.add_argument(
-    "-v",
-    "--visualize",
-    help="Flag indicating whether or not to visualize each iteration",
-)
 args = vars(ap.parse_args())
 
 
@@ -33,19 +28,14 @@ def multiscale_matchtemp(dirname=None):
     # cv2.imshow("Template", template)
     resultdict = {}
 
-    imagesets = (
-        glob.glob(args["images"] + "/" + dirname + "/*.jpg")
-        if dirname
-        else glob.glob(args["images"] + "/*.jpg")
-    )
-
-    logos = glob.glob("./logos/*.png")
+    imagesets = glob.glob(args["images"] + "/*.png")
+    logosets = glob.glob(args["templates"] + "/*.png")
 
     for imagePath in tqdm(imagesets):
         imagename = imagePath.rsplit("/", 1)[-1]
-        maxVal = foreachLogo(imagePath, logos)
+        maxVal = foreachLogo(imagePath, logosets)
 
-        print(imagename, "overall maxVal: ", maxVal)
+        # print(imagename, "overall maxVal: ", maxVal)
         if maxVal > float(args["threshold"]):
             resultdict[imagename] = maxVal
             continue
@@ -85,62 +75,33 @@ def foreachLogo(imagePath, logos):
             result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF_NORMED)
             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
 
-            if args.get("--visualize", True):
-                clone = np.dstack([edged, edged, edged])
-                cv2.rectangle(
-                    clone,
-                    (maxLoc[0], maxLoc[1]),
-                    (maxLoc[0] + tW, maxLoc[1] + tH),
-                    (0, 0, 255),
-                    2,
-                )
-                cv2.imshow("Visualize", clone)
-                cv2.waitKey(0)
+            # if args.get("--visualize", True):
+            #     clone = np.dstack([edged, edged, edged])
+            #     cv2.rectangle(
+            #         clone,
+            #         (maxLoc[0], maxLoc[1]),
+            #         (maxLoc[0] + tW, maxLoc[1] + tH),
+            #         (0, 0, 255),
+            #         2,
+            #     )
+            #     cv2.imshow("Visualize", clone)
+            #     cv2.waitKey(0)
             if found is None or maxVal > found[0]:
                 found = (maxVal, maxLoc, r)
-            print(imagePath, maxVal)
+            # print(imagePath, maxVal)
             # early return when maxv above threshold found
             if maxVal > float(args["threshold"]):
                 return maxVal
     return maxVal
 
 
-def write_json(res_pxg, res_etc):
-    final = {}
-    merged = {**res_pxg, **res_etc}  # ! syntax error when not on debugger
-    detected = {}
-    na = {}
-    for key, value in merged.items():
-        if value > float(args["threshold"]):
-            detected[key] = value
-        else:
-            na[key] = value
-    final["DETECTED"] = detected
-    final["NA"] = na
-    # final["pxg_MAXV"] = res_pxg
-    # final["etc_MAXV"] = res_etc
-    final["pxg_MEAN"] = sum(res_pxg.values()) / len(res_pxg)
-    final["etc_MEAN"] = sum(res_etc.values()) / len(res_etc)
-    final["pxg_MIN"] = min(list(res_pxg.values()))
-    final["etc_MAX"] = max(list(res_etc.values()))
-
-    with open("res_multiscale.json", "w") as file:
-        json.dump(final, file, ensure_ascii=False, indent=4)
-
-
 def write_json_ds(res):
     final = {}
     detected = {}
-    na = {}
     for key, value in res.items():
         if value > float(args["threshold"]):
             detected[key] = value
-        # else:
-        #     na[key] = value
     final["DETECTED"] = detected
-    final["NA"] = na
-    # final["pxg_MAXV"] = res_pxg
-    # final["etc_MAXV"] = res_etc
     final["MEAN"] = sum(res.values()) / len(res)
 
     with open("res_multiscale_ds.json", "w") as file:
