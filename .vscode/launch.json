@@ -11,11 +11,11 @@
             "program": "${file}",
             "args": [
                 "-t",
-                "./logos/gg1.png",
+                "./logos/guc2.png",
                 "-i",
-                "./images/gc/",
+                "./images/gc",
                 "-s",
-                "0.20",
+                "0.23",
                 "-v",
                 "True"
             ],

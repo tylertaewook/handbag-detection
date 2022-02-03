@@ -30,22 +30,42 @@ args = vars(ap.parse_args())
 
 
 def multiscale_matchtemp(dirname=None):
-    template = cv2.imread(args["template"])
-    template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-    template = cv2.Canny(template, 50, 200)
-    (tH, tW) = template.shape[:2]
     # cv2.imshow("Template", template)
     resultdict = {}
 
     imagesets = (
         glob.glob(args["images"] + "/" + dirname + "/*.jpg")
         if dirname
-        else glob.glob(args["images"] + "/*.png")
+        else glob.glob(args["images"] + "/*.jpg")
     )
 
+    logos = glob.glob("./logos/*.png")
+
     for imagePath in tqdm(imagesets):
-        image = cv2.imread(imagePath)
         imagename = imagePath.rsplit("/", 1)[-1]
+        maxVal = foreachLogo(imagePath, logos)
+
+        print(imagename, "overall maxVal: ", maxVal)
+        if maxVal > float(args["threshold"]):
+            resultdict[imagename] = maxVal
+            continue
+
+    return resultdict
+
+
+def foreachLogo(imagePath, logos):
+    for logoPath in logos:
+        template = cv2.imread(logoPath)
+        template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        template = cv2.Canny(template, 50, 200)
+        (tH, tW) = template.shape[:2]
+
+        image = cv2.imread(imagePath)
+        # Adding randn noise
+        noise = np.zeros(image.shape, np.int32)
+        cv2.randn(noise, 50, 10)
+        image = cv2.add(image, noise, dtype=cv2.CV_8UC3)
+
         if image is None:  # * prevents !_src.empty() error
             continue
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -65,35 +85,24 @@ def multiscale_matchtemp(dirname=None):
             result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF_NORMED)
             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
 
-            # if args.get("--visualize", True):
-            #     clone = np.dstack([edged, edged, edged])
-            #     cv2.rectangle(
-            #         clone,
-            #         (maxLoc[0], maxLoc[1]),
-            #         (maxLoc[0] + tW, maxLoc[1] + tH),
-            #         (0, 0, 255),
-            #         2,
-            #     )
-            #     cv2.imshow("Visualize", clone)
-            #     cv2.waitKey(0)
+            if args.get("--visualize", True):
+                clone = np.dstack([edged, edged, edged])
+                cv2.rectangle(
+                    clone,
+                    (maxLoc[0], maxLoc[1]),
+                    (maxLoc[0] + tW, maxLoc[1] + tH),
+                    (0, 0, 255),
+                    2,
+                )
+                cv2.imshow("Visualize", clone)
+                cv2.waitKey(0)
             if found is None or maxVal > found[0]:
                 found = (maxVal, maxLoc, r)
-            # maxv above threshold found
+            print(imagePath, maxVal)
+            # early return when maxv above threshold found
             if maxVal > float(args["threshold"]):
-                break
-        if found is not None:
-            (maxVal, maxLoc, r) = found
-        # print(imagename, "maxVal: ", maxVal)
-        resultdict[imagename] = maxVal
-        # unpack the bookkeeping variable and compute the (x, y) coordinates
-        # of the bounding box based on the resized ratio
-        # (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
-        # (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
-        # # draw a bounding box around the detected result and display the image
-        # cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-        # cv2.imshow("Image", image)
-        # cv2.waitKey(0)
-    return resultdict
+                return maxVal
+    return maxVal
 
 
 def write_json(res_pxg, res_etc):
@@ -133,7 +142,6 @@ def write_json_ds(res):
     # final["pxg_MAXV"] = res_pxg
     # final["etc_MAXV"] = res_etc
     final["MEAN"] = sum(res.values()) / len(res)
-    final["MEAN"] = sum(res.values()) / len(res)
 
     with open("res_multiscale_ds.json", "w") as file:
         json.dump(final, file, ensure_ascii=False, indent=4)
@@ -141,9 +149,6 @@ def write_json_ds(res):
 
 if __name__ == "__main__":
     start_time = time.process_time()
-    # res_gc = multiscale_matchtemp("gc")
-    # res_etc = multiscale_matchtemp("pxg")
-    # write_json(res_gc, res_etc)
     res = multiscale_matchtemp()
     write_json_ds(res)
     end_time = time.process_time()
