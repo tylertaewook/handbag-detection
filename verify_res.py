@@ -3,7 +3,7 @@ import json
 
 
 if __name__ == "__main__":
-    gcmrg = pd.read_csv("./gcmrg2.csv", index_col=[0])
+    gcmrg = pd.read_csv("./gcmrg.csv", index_col=[0])
     output = {}
     with open("./res_multiscale_ds.json") as json_file:
         data = json.load(json_file)
