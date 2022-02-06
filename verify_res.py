@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 
+
 if __name__ == "__main__":
     gcmrg = pd.read_csv("./gcmrg2.csv", index_col=[0])
     output = {}
