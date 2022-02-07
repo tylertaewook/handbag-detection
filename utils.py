@@ -58,7 +58,7 @@ def verify():
                 print(img, " is gucci")
             cv2.destroyAllWindows()
 
-    with open("./verified.json", "w") as file:
+    with open("./verified-output.json", "w") as file:
         json.dump(verified, file, ensure_ascii=False, indent=4)
 
 
